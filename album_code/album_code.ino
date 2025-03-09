@@ -1,44 +1,41 @@
-
 #include "BluetoothA2DPSource.h"
-#include <math.h> 
-
-#define c3_frequency  130.81
+#include <SPI.h>
+#include <SD.h>
 
 BluetoothA2DPSource a2dp_source;
+File sound_file;
+const char* file_name = "/audio.raw";
+const int sd_ss_pin = 5;
+const int frame_size_bytes = sizeof(int16_t) * 2;
 
-// The supported audio codec in ESP32 A2DP is SBC. SBC audio stream is encoded
-// from PCM data normally formatted as 44.1kHz sampling rate, two-channel 16-bit sample data
-int32_t get_data_frames(Frame *frame, int32_t frame_count) {
-    static float m_time = 0.0;
-    float m_amplitude = 10000.0;  // -32,768 to 32,767
-    float m_deltaTime = 1.0 / 44100.0;
-    float m_phase = 0.0;
-    float pi_2 = PI * 2.0;
-    // fill the channel data
-    for (int sample = 0; sample < frame_count; ++sample) {
-        float angle = pi_2 * c3_frequency * m_time + m_phase;
-        frame[sample].channel1 = m_amplitude * sin(angle);
-        frame[sample].channel2 = frame[sample].channel1;
-        m_time += m_deltaTime;
-    }
-    // to prevent watchdog
-    delay(1);
-
-    return frame_count;
+// callback used by A2DP to provide the sound data
+int32_t get_sound_data(Frame* data, int32_t len) {
+  // the data in the file must be in int16 with 2 channels 
+  size_t result_len_bytes = sound_file.read((uint8_t*)data, len * frame_size_bytes );
+  // result is in number of frames
+  int32_t result_len = result_len_bytes / frame_size_bytes;
+  ESP_LOGD("get_sound_data", "%d -> %d",len );
+  return result_len;
 }
 
-
-void setup() {
+// Arduino Setup
+void setup(void) {
   Serial.begin(115200);
-  Serial.println("Starting ESP32 A2DP Album");
-  a2dp_source.set_auto_reconnect(false);
-  a2dp_source.set_data_callback_in_frames(get_data_frames);
-  a2dp_source.set_volume(120);
-  a2dp_source.start("ESP32_Player"); 
-  Serial.println("Bluetooth A2DP Album Started!"); 
+
+  // Setup SD and open file
+  SD.begin(sd_ss_pin);
+  sound_file = SD.open(file_name, FILE_READ);
+ if (!sound_file) {
+    Serial.println("Failed to open /test.wav");
+    while (1);
+  }
+  Serial.println("WAV file opened successfully.");
+
+  // start the bluetooth
+  Serial.println("starting A2DP...");
+  a2dp_source.start("ESP32_Player", get_sound_data);  
 }
 
+// Arduino loop - repeated processing 
 void loop() {
-  // to prevent watchdog
-  delay(1000);
 }
