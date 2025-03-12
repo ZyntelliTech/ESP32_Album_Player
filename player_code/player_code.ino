@@ -24,7 +24,7 @@ void setup() {
 
   // Start the Bluetooth A2DP sink with the chosen device name.
   a2dp_sink.start("ESP32_Player");
-
+  delay(1000);
   Serial.println("Bluetooth A2DP Sink Started!");
 }
 
