@@ -1,4 +1,5 @@
 
+
 //remove this, to find issues regarding mp3 decoding
 // #define HELIX_LOGGING_ACTIVE false
 
@@ -14,10 +15,19 @@ A2DPStream out;
 MP3DecoderHelix decoder;
 AudioPlayer player(source, out, decoder);
 
+// gets called when button on bluetooth speaker is pressed
+void button_handler(uint8_t id, bool isReleased){
+  if (isReleased) {
+    Serial.print("button id ");
+    Serial.print(id);
+    Serial.println(" released");
+  }
+}
+
 
 void setup() {
   Serial.begin(115200);
-  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Debug);  // Debug , Error  , Warning
+  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Warning);  // Debug , Error  , Warning
 
   // setup player
   // Setting up SPI if necessary with the right SD pins by calling 
@@ -31,12 +41,15 @@ void setup() {
 
   // setup output - We send the test signal via A2DP - so we conect to a Bluetooth Speaker
   auto cfg = out.defaultConfig(TX_MODE);
-  // auto a2dp_source = out.source();
-  // a2dp_source.set_avrc_passthru_command_callback(button_handler);
+  
+  
   cfg.silence_on_nodata = true; // prevent disconnect when there is no audio data
   cfg.name = "ESP32_Player";  // set the device here. Otherwise the first available device is used for output
   //cfg.auto_reconnect = true;  // if this is use we just quickly connect to the last device ignoring cfg.name
+  out.set_button_callback(button_handler);
   out.begin(cfg);
+  // BluetoothA2DPSource a2dp_source = out.source();
+  // a2dp_source.set_avrc_passthru_command_callback(button_handler);
 
 
 }
