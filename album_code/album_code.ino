@@ -15,13 +15,47 @@ A2DPStream out;
 MP3DecoderHelix decoder;
 AudioPlayer player(source, out, decoder);
 
+static float volume = 0.3;
+
 // gets called when button on bluetooth speaker is pressed
 void button_handler(uint8_t id, bool isReleased){
-  if (isReleased) {
-    Serial.print("button id ");
-    Serial.print(id);
-    Serial.println(" released");
-  }
+ if (isReleased) { // Only trigger action when button is released
+        Serial.print("Button ID ");
+        Serial.print(id);
+        Serial.println(" released");
+
+        switch (id) {
+            case 68: // PLAYPAUSE
+                player.setActive(!player.isActive());
+                break;
+            case 69: // STOP
+                player.stop();
+                break;
+            case 75: // NEXT
+                player.next();
+                break;
+            case 76: // PREV
+                player.previous();
+                break;
+            case 65: // VOL UP
+                volume += 0.1;
+                if (volume > 1.0) volume = 1.0; // Ensure max limit
+                player.setVolume(volume);
+                Serial.print("Volume Up: ");
+                Serial.println(volume);
+                break;
+            case 66: // VOL DOWN
+                volume -= 0.1;
+                if (volume < 0.0) volume = 0.0; // Ensure min limit
+                player.setVolume(volume);
+                Serial.print("Volume Down: ");
+                Serial.println(volume);
+                break;
+            default:
+                Serial.println("Unknown button event.");
+                break;
+        }
+    }
 }
 
 
@@ -32,7 +66,7 @@ void setup() {
   // setup player
   // Setting up SPI if necessary with the right SD pins by calling 
   // SPI.begin(PIN_AUDIO_KIT_SD_CARD_CLK, PIN_AUDIO_KIT_SD_CARD_MISO, PIN_AUDIO_KIT_SD_CARD_MOSI, PIN_AUDIO_KIT_SD_CARD_CS);
-  player.setVolume(0.3);
+  player.setVolume(volume);
   // player.setAutoNext();
   // player.previous();
   // player.next();
