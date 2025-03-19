@@ -1,7 +1,7 @@
 
 
 //remove this, to find issues regarding mp3 decoding
-// #define HELIX_LOGGING_ACTIVE false
+#define HELIX_LOGGING_ACTIVE false
 
 #include "AudioTools.h"
 #include "AudioTools/AudioLibs/A2DPStream.h"
@@ -16,23 +16,46 @@ MP3DecoderHelix decoder;
 AudioPlayer player(source, out, decoder);
 
 static float volume = 0.3;
+static bool isplay = true;
 
-// gets called when button on bluetooth speaker is pressed
-void button_handler(uint8_t id, bool isReleased){
- if (isReleased) { // Only trigger action when button is released
-        Serial.print("Button ID ");
-        Serial.print(id);
-        Serial.println(" released");
+// Create a queue to store button events
+QueueHandle_t buttonQueue;
 
+
+void IRAM_ATTR button_handler(uint8_t id, bool isReleased) {
+    if (isReleased) {
+        xQueueSendFromISR(buttonQueue, &id, NULL);
+    }
+}
+
+
+
+void processButtonEvents() {
+    uint8_t id;
+
+    // Check if there's a button event in the queue
+    if (xQueueReceive(buttonQueue, &id, 0) == pdTRUE) {
+        Serial.print("Processing Button ID: ");
+        Serial.println(id);
         switch (id) {
             case 68: // PLAYPAUSE
-                player.setActive(!player.isActive());
+                Serial.println("initiating play/pause song...");
+                // player.setActive(!player.isActive());
+                isplay = !isplay;
+                if(isplay)
+                  Serial.println("initiate playing");
+                else
+                  Serial.println("initiate pause");
+                player.setActive(isplay);
+                Serial.println("initiated play/pause song...");
                 break;
             case 69: // STOP
                 player.stop();
                 break;
             case 75: // NEXT
+                Serial.println("initiating next song...");
                 player.next();
+                Serial.println("initiated next song...");
                 break;
             case 76: // PREV
                 player.previous();
@@ -61,7 +84,7 @@ void button_handler(uint8_t id, bool isReleased){
 
 void setup() {
   Serial.begin(115200);
-  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Warning);  // Debug , Error  , Warning
+  AudioToolsLogger.begin(Serial, AudioToolsLogLevel::Error);  // Debug , Error  , Warning
 
   // setup player
   // Setting up SPI if necessary with the right SD pins by calling 
@@ -70,6 +93,7 @@ void setup() {
   // player.setAutoNext();
   // player.previous();
   // player.next();
+  player.setAutoFade(false);
   player.play();
   player.begin();
 
@@ -82,6 +106,10 @@ void setup() {
   //cfg.auto_reconnect = true;  // if this is use we just quickly connect to the last device ignoring cfg.name
   out.set_button_callback(button_handler);
   out.begin(cfg);
+
+  // Create a queue to hold button events (max 10)
+    buttonQueue = xQueueCreate(10, sizeof(uint8_t));
+
   // BluetoothA2DPSource a2dp_source = out.source();
   // a2dp_source.set_avrc_passthru_command_callback(button_handler);
 
@@ -89,5 +117,7 @@ void setup() {
 }
 
 void loop() {
+ 
   player.copy();
+  processButtonEvents(); // Process button events safely in the loop
 }
