@@ -3,10 +3,20 @@
 //remove this, to find issues regarding mp3 decoding
 #define HELIX_LOGGING_ACTIVE false
 
+
+
+#define PIN_AUDIO_KIT_SD_CARD_CLK 16
+#define PIN_AUDIO_KIT_SD_CARD_MISO 28
+#define PIN_AUDIO_KIT_SD_CARD_MOSI 26
+#define PIN_AUDIO_KIT_SD_CARD_CS 25
+
 #include "AudioTools.h"
 #include "AudioTools/AudioLibs/A2DPStream.h"
 #include "AudioTools/Disk/AudioSourceSDFAT.h"
 #include "AudioTools/AudioCodecs/CodecMP3Helix.h"
+
+uint32_t prev_time = 0;
+uint32_t prev_time_btn = 0;
 
 const char *startFilePath="/";
 const char* ext="mp3";
@@ -17,13 +27,17 @@ AudioPlayer player(source, out, decoder);
 
 static float volume = 0.3;
 static bool isplay = true;
+static bool tempplay = false;
 
 // Create a queue to store button events
 QueueHandle_t buttonQueue;
 
 
-void IRAM_ATTR button_handler(uint8_t id, bool isReleased) {
+// void IRAM_ATTR button_handler(uint8_t id, bool isReleased) {
+void button_handler(uint8_t id, bool isReleased) {
+  Serial.println("BTN event received before RELEASED -------->");
     if (isReleased) {
+        Serial.println("BTN event received---------------->");
         xQueueSendFromISR(buttonQueue, &id, NULL);
     }
 }
@@ -39,15 +53,12 @@ void processButtonEvents() {
         Serial.println(id);
         switch (id) {
             case 68: // PLAYPAUSE
-                Serial.println("initiating play/pause song...");
-                // player.setActive(!player.isActive());
                 isplay = !isplay;
                 if(isplay)
                   Serial.println("initiate playing");
                 else
                   Serial.println("initiate pause");
                 player.setActive(isplay);
-                Serial.println("initiated play/pause song...");
                 break;
             case 69: // STOP
                 player.stop();
@@ -55,9 +66,9 @@ void processButtonEvents() {
             case 75: // NEXT
                 Serial.println("initiating next song...");
                 player.next();
-                Serial.println("initiated next song...");
                 break;
             case 76: // PREV
+            Serial.println("initiating Prev song...");
                 player.previous();
                 break;
             case 65: // VOL UP
@@ -88,12 +99,10 @@ void setup() {
 
   // setup player
   // Setting up SPI if necessary with the right SD pins by calling 
-  // SPI.begin(PIN_AUDIO_KIT_SD_CARD_CLK, PIN_AUDIO_KIT_SD_CARD_MISO, PIN_AUDIO_KIT_SD_CARD_MOSI, PIN_AUDIO_KIT_SD_CARD_CS);
+  SPI.begin(PIN_AUDIO_KIT_SD_CARD_CLK, PIN_AUDIO_KIT_SD_CARD_MISO, PIN_AUDIO_KIT_SD_CARD_MOSI, PIN_AUDIO_KIT_SD_CARD_CS);
   player.setVolume(volume);
   // player.setAutoNext();
-  // player.previous();
-  // player.next();
-  player.setAutoFade(false);
+  // player.setAutoFade(false);
   player.play();
   player.begin();
 
@@ -109,15 +118,35 @@ void setup() {
 
   // Create a queue to hold button events (max 10)
     buttonQueue = xQueueCreate(10, sizeof(uint8_t));
-
-  // BluetoothA2DPSource a2dp_source = out.source();
-  // a2dp_source.set_avrc_passthru_command_callback(button_handler);
-
-
 }
 
 void loop() {
- 
+
   player.copy();
-  processButtonEvents(); // Process button events safely in the loop
+
+  if(millis() - prev_time > 500){
+    processButtonEvents(); // Process button events safely in the loop
+    prev_time = millis();
+  }
+
+  if((!isplay) && (millis() - prev_time_btn > 500)){  
+    player.setVolume(0);
+    player.setActive(true);
+    tempplay = true;
+    prev_time_btn = millis();
+  }
+
+    if((tempplay == true) && (millis() - prev_time_btn > 2)){  
+    player.setActive(false);
+    tempplay = false;
+    prev_time_btn = millis();
+
+  }
+
+  if(isplay && !player.isActive())
+    isplay = false;
+
+  if(isplay)
+    player.setVolume(volume);
+  
 }
