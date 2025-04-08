@@ -3,12 +3,18 @@
 //remove this, to find issues regarding mp3 decoding
 #define HELIX_LOGGING_ACTIVE false
 
+// //----CLIENT SETUP
+// #define PIN_AUDIO_KIT_SD_CARD_CLK 16
+// #define PIN_AUDIO_KIT_SD_CARD_MISO 28
+// #define PIN_AUDIO_KIT_SD_CARD_MOSI 26
+// #define PIN_AUDIO_KIT_SD_CARD_CS 25
 
 
-#define PIN_AUDIO_KIT_SD_CARD_CLK 16
-#define PIN_AUDIO_KIT_SD_CARD_MISO 28
-#define PIN_AUDIO_KIT_SD_CARD_MOSI 26
-#define PIN_AUDIO_KIT_SD_CARD_CS 25
+//----LOCAL SETUP
+#define PIN_AUDIO_KIT_SD_CARD_CLK 18
+#define PIN_AUDIO_KIT_SD_CARD_MISO 19
+#define PIN_AUDIO_KIT_SD_CARD_MOSI 23
+#define PIN_AUDIO_KIT_SD_CARD_CS 5
 
 #include "AudioTools.h"
 #include "AudioTools/AudioLibs/A2DPStream.h"
@@ -35,7 +41,7 @@ QueueHandle_t buttonQueue;
 
 // void IRAM_ATTR button_handler(uint8_t id, bool isReleased) {
 void button_handler(uint8_t id, bool isReleased) {
-  Serial.println("BTN event received before RELEASED -------->");
+  // Serial.println("BTN event received before RELEASED -------->");
     if (isReleased) {
         Serial.println("BTN event received---------------->");
         xQueueSendFromISR(buttonQueue, &id, NULL);
@@ -46,6 +52,7 @@ void button_handler(uint8_t id, bool isReleased) {
 
 void processButtonEvents() {
     uint8_t id;
+    bool file_active = false;
 
     // Check if there's a button event in the queue
     if (xQueueReceive(buttonQueue, &id, 0) == pdTRUE) {
@@ -65,7 +72,8 @@ void processButtonEvents() {
                 break;
             case 75: // NEXT
                 Serial.println("initiating next song...");
-                player.next();
+                file_active = player.next();
+                Serial.println(file_active);
                 break;
             case 76: // PREV
             Serial.println("initiating Prev song...");

@@ -2,33 +2,33 @@
 #include "ESP_I2S.h"
 
 // // Define I2S pins for the external DAC (Local Setup)
-// #define I2S_BCK  27    // Bit Clock
-// #define I2S_WS   14    // Word Select (LR Clock)
-// #define I2S_DOUT 26    // Data Out
+#define I2S_BCK  27    // Bit Clock
+#define I2S_WS   14    // Word Select (LR Clock)
+#define I2S_DOUT 26    // Data Out
 
 // Define I2S pins for the external DAC (Client Setup)
-#define I2S_BCK  28    // Bit Clock
-#define I2S_WS   26    // Word Select (LR Clock)
-#define I2S_DOUT 27    // Data Out
+// #define I2S_BCK  28    // Bit Clock
+// #define I2S_WS   26    // Word Select (LR Clock)
+// #define I2S_DOUT 27    // Data Out
 
 
 // Define Player Control Buttons  (Client Setup) 
-#define PLAY_PAUSE  36
-#define PREV        39
+// #define PLAY_PAUSE  36
+// #define PREV        39
+// #define NEXT        34
+// #define STOP        35
+// #define VOL_UP      32
+// #define VOL_DOWN    33
+
+
+
+// (Local Setup)
+#define PLAY_PAUSE  32
+#define PREV        33
 #define NEXT        34
 #define STOP        35
-#define VOL_UP      32
-#define VOL_DOWN    33
-
-
-
-// Temp  (Local Setup)
-// #define PLAY_PAUSE  32
-// #define PREV        36
-// #define NEXT        33
-// #define STOP        35
-// #define VOL_UP      39
-// #define VOL_DOWN    34
+#define VOL_UP      12
+#define VOL_DOWN    13
 
 #define NUM_BUTTONS 6
 
@@ -122,13 +122,17 @@ void togglePlayPause() {
     //     a2dp_sink.pause();
     // }
     // isPaused = !isPaused;
+
+
+
+    
     Serial.println("Playing/Pause...");
     a2dp_sink.play();
 }
 
 void playPrevious() {
     Serial.println("Previous Track...");
-    // a2dp_sink.previous();
+    a2dp_sink.previous();
 }
 
 void playNext() {
@@ -138,15 +142,15 @@ void playNext() {
 
 void stopPlayback() {
     Serial.println("Stopping...");
-    // a2dp_sink.stop();
+    a2dp_sink.stop();
 }
 
 void volumeUp() {
     Serial.println("Volume Up...");
-    // a2dp_sink.volume_up();
+    a2dp_sink.volume_up();
 }
 
 void volumeDown() {
     Serial.println("Volume Down...");
-    // a2dp_sink.volume_down();
+    a2dp_sink.volume_down();
 }
