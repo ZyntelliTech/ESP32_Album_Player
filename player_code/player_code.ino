@@ -132,17 +132,17 @@ void togglePlayPause() {
 
 void playPrevious() {
     Serial.println("Previous Track...");
-    a2dp_sink.previous();
+    //a2dp_sink.previous();
 }
 
 void playNext() {
     Serial.println("Next Track...");
-    a2dp_sink.next();
+    //a2dp_sink.next();
 }
 
 void stopPlayback() {
     Serial.println("Stopping...");
-    a2dp_sink.stop();
+    //a2dp_sink.stop();
 }
 
 void volumeUp() {
@@ -152,5 +152,5 @@ void volumeUp() {
 
 void volumeDown() {
     Serial.println("Volume Down...");
-    a2dp_sink.volume_down();
+    //a2dp_sink.volume_down();
 }
